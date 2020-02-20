@@ -6,20 +6,37 @@ async function getDataFromHomepage() {
     if (/http:/.test(location.href)) {
         protocol = 'http://'
     }
-    let response = await fetch(protocol + 'www.avon.com.ua' + location.pathname.substring(0,location.pathname.lastIndexOf("/")) + '/home.page', {
+    protocol = 'https://';
+    console.log(protocol);
+    let url = protocol + 'www.avon.com.ua' + location.pathname.substring(0,location.pathname.lastIndexOf("/")) + '/home.page';
+    console.log(url);
+    let response = await fetch(url, {
         method: 'GET',
-        credentials: 'include'
+        credentials: 'same-origin'
     });
     let text = await response.text();
     console.log(text);
     console.log(parser.parseFromString(text, "text/html"));
+
+    let xhr = new XMLHttpRequest();
+    xhr.open('GET', 'phones.json', true);
+    xhr.send();
+    xhr.onreadystatechange = function() { // (3)
+        if (xhr.readyState !== 4) return;
+        if (xhr.status !== 200) {
+            alert(xhr.status + ': ' + xhr.statusText);
+        } else {
+            text = xhr.responseText;
+            alert(text);
+        }
+    };
+    console.log(parser.parseFromString(text, "text/html"));
+
     dataForHeader.campNumber = Number(parser.parseFromString(text, "text/html").querySelector('.campaign_All').innerText.replace('C', ''));
     dataForHeader.deadLine = parser.parseFromString(text, "text/html").querySelector('.dueby_text').children[0];
-
     dataForHeader.deadLineText = dataForHeader.deadLine.firstChild.textContent;
     dataForHeader.deadLineDate = dataForHeader.deadLine.childNodes[2].textContent.replace('\n', '').replace('   ' + '               ', ', ').trim() + ', ';
     dataForHeader.deadLineLeft = dataForHeader.deadLine.childNodes[3].innerText.trim();
-
     console.log(dataForHeader.deadLine);
     getFromArrBalance(parser.parseFromString(text, "text/html"));
     sessionStorage.setItem('dataForHeader', JSON.stringify(dataForHeader));
@@ -69,6 +86,8 @@ function fillNewHeader() {
         Array.from(document.getElementsByClassName('deadlineLeft')).forEach(item => {
             item.innerText = dataForHeader.deadLineLeft;
         });
+        document.getElementById('learningHubLink').href = document.getElementById('menu5').href;
+        document.getElementById('serviceLink').href = document.getElementById('menu6').href;
     } catch (e) {
         console.log(e);
     }
@@ -96,7 +115,9 @@ window.addEventListener('load', () => {
     } else {
         console.log('try fetch from homepage');
         getDataFromHomepage().then(()=> {
+            console.log('parse begin after get data');
             fillNewHeader();
+            console.log('after fi header');
             if (isTest()) {
                 console.log('we parsed homepage');
             }
@@ -145,6 +166,6 @@ window.addEventListener('load', () => {
     $(".close_header_menu").click(function() {
         $('.header-global-menu_bg').removeClass('visible');
         $('.header-global-menu').removeClass('visible');
-        $('body').css('overflow', 'auto');
+        $('body').removeAttr("style");
     });
 });
